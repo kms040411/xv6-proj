@@ -10,12 +10,12 @@ sh.o : sh.c
 	$(CC) -c sh.c
 
 test : $(TARGET)
-	touch output.txt answer.txt
-	./$(TARGET) < t.sh >> output.txt
-	sh < t.sh >> answer.txt
-	diff answer.txt output.txt
+	@touch output.txt answer.txt
+	@./$(TARGET) < t.sh >> output.txt
+	@sh < t.sh >> answer.txt
+	@diff answer.txt output.txt
 	@echo "[SUCCESS] test1"
-	rm -f answer.txt output.txt
+	@rm -f answer.txt output.txt
 
 clean :
 	$(RM) *.o

@@ -63,6 +63,7 @@ runcmd(struct cmd *cmd)
     if(ecmd->argv[0] == 0)
       _exit(0);
     execvp(ecmd->argv[0], &ecmd->argv[0]);
+    fprintf(stderr, "%s: No such file or directory\n", ecmd->argv[0]);
     break;
 
   case '>':

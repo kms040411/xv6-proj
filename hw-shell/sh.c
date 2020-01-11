@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include <errno.h>
 // Simplifed xv6 shell.
 
 #define MAXARGS 10
@@ -61,22 +62,54 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       _exit(0);
-    fprintf(stderr, "exec not implemented\n");
-    // Your code here ...
+    execvp(ecmd->argv[0], &ecmd->argv[0]);
     break;
 
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    fprintf(stderr, "redir not implemented\n");
-    // Your code here ...
+    int fd = open(rcmd->file, rcmd->flags, S_IRWXU | S_IRWXG | S_IRWXO);
+    if (rcmd->type == '<') {                    // "<"
+      if (fd < 0) {
+        fprintf(stderr, "%s: No such file or directory\n", rcmd->file);
+      } else {
+        dup2(fd, STDIN_FILENO);
+      }
+    } else if (rcmd->type == '>'){              // ">"
+      if (fd < 0) {
+        fprintf(stderr, "%s: Unable to create or write to file\n", rcmd->file);
+      } else {
+        dup2(fd, STDOUT_FILENO);
+      }
+    }
     runcmd(rcmd->cmd);
+    close(fd);
     break;
 
   case '|':
     pcmd = (struct pipecmd*)cmd;
-    fprintf(stderr, "pipe not implemented\n");
-    // Your code here ...
+    int pipe_fd[2];
+
+    if(pipe(pipe_fd) == -1) {
+      fprintf(stderr, "Pipe creation failed\n");
+      break;
+    }
+
+    pid_t pid = fork1();
+    if (pid == 0) {
+      // child process
+      close(pipe_fd[1]);   // child will be used only for reading
+      dup2(pipe_fd[0], STDIN_FILENO);
+      runcmd(pcmd->right);
+      close(pipe_fd[0]);
+    } else {
+      // parent process
+      close(pipe_fd[0]);   // parent will be used only for writing
+      dup2(pipe_fd[1], STDOUT_FILENO);
+      runcmd(pcmd->left);
+      close(pipe_fd[1]);
+      wait(NULL);
+    }
     break;
   }    
   _exit(0);
@@ -111,6 +144,7 @@ main(void)
     }
     if(fork1() == 0)
       runcmd(parsecmd(buf));
+      
     wait(&r);
   }
   exit(0);

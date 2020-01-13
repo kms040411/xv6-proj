@@ -128,6 +128,30 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 };
 
+char *syscall_str[22] = {"NOT USED",
+                    "fork",
+                    "exit",
+                    "wait",
+                    "pipe",
+                    "read",
+                    "kill",
+                    "exec",
+                    "fstat",
+                    "chdir",
+                    "dup",
+                    "getpid",
+                    "sbrk",
+                    "sleep",
+                    "uptime",
+                    "open",
+                    "write",
+                    "mknod",
+                    "unlink",
+                    "link",
+                    "mkdir",
+                    "close"
+                    };
+
 void
 syscall(void)
 {
@@ -137,6 +161,7 @@ syscall(void)
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     curproc->tf->eax = syscalls[num]();
+    cprintf("%s -> %d\n", syscall_str[num], curproc->tf->eax);
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             curproc->pid, curproc->name, num);

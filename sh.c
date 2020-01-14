@@ -90,7 +90,7 @@ runcmd(struct cmd *cmd)
     }
     runcmd(rcmd->cmd);
     break;
-    
+
   case LIST:
     lcmd = (struct listcmd*)cmd;
     if(fork1() == 0)
@@ -108,15 +108,13 @@ runcmd(struct cmd *cmd)
         break;
       }
       if (fork1() == 0) {
-        // child process
-        close(p[1]);   // child will be used only for reading
+        close(p[1]);
         dup2(p[0], 0);
         runcmd(pcmd->right);
         close(p[0]);
       } 
       if (fork1() == 0) {
-        // parent process
-        close(p[0]);   // parent will be used only for writing
+        close(p[0]);
         dup2(p[1], 1);
         runcmd(pcmd->left);
         close(p[1]);

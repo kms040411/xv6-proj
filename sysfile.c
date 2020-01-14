@@ -66,6 +66,25 @@ sys_dup(void)
   return fd;
 }
 
+// duplicate f1 to f2
+int sys_dup2(void) {
+  struct file *f1;
+  struct file *f2;
+  int fd1, fd2;
+  struct proc *curproc = myproc();
+
+  if(argfd(0, &fd1, &f1) < 0)
+    return -1;
+  if(argfd(1, &fd2, &f2) < 0)
+    return -1;
+  
+  fileclose(f2);
+  curproc->ofile[fd2] = f1; // fd2 now points file f1
+  filedup(f1);
+
+  return 0;
+}
+
 int
 sys_read(void)
 {

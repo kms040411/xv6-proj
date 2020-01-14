@@ -13,6 +13,8 @@
 
 #define MAXARGS 10
 
+#define USE_DUP2
+
 struct cmd {
   int type;
 };
@@ -88,7 +90,7 @@ runcmd(struct cmd *cmd)
     }
     runcmd(rcmd->cmd);
     break;
-
+    
   case LIST:
     lcmd = (struct listcmd*)cmd;
     if(fork1() == 0)
@@ -99,26 +101,52 @@ runcmd(struct cmd *cmd)
 
   case PIPE:
     pcmd = (struct pipecmd*)cmd;
-    if(pipe(p) < 0)
-      panic("pipe");
-    if(fork1() == 0){
-      close(1);
-      dup(p[1]);
+
+    #ifdef USE_DUP2
+      if(pipe(p) == -1) {
+        printf(2, "Pipe creation failed\n");
+        break;
+      }
+      if (fork1() == 0) {
+        // child process
+        close(p[1]);   // child will be used only for reading
+        dup2(p[0], 0);
+        runcmd(pcmd->right);
+        close(p[0]);
+      } 
+      if (fork1() == 0) {
+        // parent process
+        close(p[0]);   // parent will be used only for writing
+        dup2(p[1], 1);
+        runcmd(pcmd->left);
+        close(p[1]);
+      }
       close(p[0]);
       close(p[1]);
-      runcmd(pcmd->left);
-    }
-    if(fork1() == 0){
-      close(0);
-      dup(p[0]);
+      wait();
+      wait();
+    #else 
+      if(pipe(p) < 0)
+        panic("pipe");
+      if(fork1() == 0){
+        close(1);
+        dup(p[1]);
+        close(p[0]);
+        close(p[1]);
+        runcmd(pcmd->left);
+      }
+      if(fork1() == 0){
+        close(0);
+        dup(p[0]);
+        close(p[0]);
+        close(p[1]);
+        runcmd(pcmd->right);
+      }
       close(p[0]);
       close(p[1]);
-      runcmd(pcmd->right);
-    }
-    close(p[0]);
-    close(p[1]);
-    wait();
-    wait();
+      wait();
+      wait();
+    #endif
     break;
 
   case BACK:

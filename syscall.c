@@ -7,6 +7,8 @@
 #include "x86.h"
 #include "syscall.h"
 
+//#define TRACE_SYSCALL
+
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
 // Arguments on the stack, from the user call to the C
@@ -103,6 +105,7 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_date(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -126,9 +129,10 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_date]    sys_date,
 };
 
-char *syscall_str[22] = {"NOT USED",
+char *syscall_str[23] = {"NOT USED",
                     "fork",
                     "exit",
                     "wait",
@@ -149,7 +153,8 @@ char *syscall_str[22] = {"NOT USED",
                     "unlink",
                     "link",
                     "mkdir",
-                    "close"
+                    "close",
+                    "date"
                     };
 
 void
@@ -160,12 +165,18 @@ syscall(void)
 
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    int arg1, arg2, arg3;
-    argint(0, &arg1);
-    argint(1, &arg2);
-    argint(2, &arg3);
+    #ifdef TRACE_SYSCALL
+      int arg1, arg2, arg3;
+      argint(0, &arg1);
+      argint(1, &arg2);
+      argint(2, &arg3);
+    #endif
+
     curproc->tf->eax = syscalls[num]();
-    cprintf("%s -> %d\nargs: %d %d %d\n", syscall_str[num], curproc->tf->eax, arg1, arg2, arg3);
+
+    #ifdef TRACE_SYSCALL
+      cprintf("%s -> %d\nargs: %d %d %d\n", syscall_str[num], curproc->tf->eax, arg1, arg2, arg3);
+    #endif
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             curproc->pid, curproc->name, num);

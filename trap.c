@@ -56,6 +56,20 @@ trap(struct trapframe *tf)
       release(&tickslock);
     }
     lapiceoi();
+    
+    //hw_cpu-alarm
+    struct proc *m_proc = myproc();
+    if((m_proc != 0) && ((tf->cs & 3) == 3) && (m_proc->alarmticks != 0)){
+      m_proc->remainticks--;
+      if(m_proc->remainticks == 0){
+        tf->esp = tf->esp - 4;
+        *(int *)(tf->esp) = tf->eip;
+        tf->eip = (int)(m_proc->alarmhandler);
+
+        m_proc->remainticks = m_proc->alarmticks;
+      }
+    }
+    
     break;
   case T_IRQ0 + IRQ_IDE:
     ideintr();

@@ -62,8 +62,13 @@ trap(struct trapframe *tf)
     if((m_proc != 0) && ((tf->cs & 3) == 3) && (m_proc->alarmticks != 0)){
       m_proc->remainticks--;
       if(m_proc->remainticks == 0){
-        tf->esp = tf->esp - 4;
-        *(int *)(tf->esp) = tf->eip;
+        tf->esp = tf->esp - 24;
+        *(int *)(tf->esp) = tf->esp + 20;
+        *(int *)(tf->esp + 4) = tf->eax;        // caller-saved registers
+        *(int *)(tf->esp + 8) = tf->edx;
+        *(int *)(tf->esp + 12) = tf->ecx;
+        *(int *)(tf->esp + 16) = tf->eip;       // return address
+        *(int *)(tf->esp + 20) = 0xC3595A58;    // pop %eax; pop %edx; pop %ecx; ret;
         tf->eip = (int)(m_proc->alarmhandler);
 
         m_proc->remainticks = m_proc->alarmticks;

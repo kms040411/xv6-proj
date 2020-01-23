@@ -108,6 +108,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_date(void);
 extern int sys_dup2(void);
+extern int sys_alarm(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -133,9 +134,10 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_date]    sys_date,
 [SYS_dup2]    sys_dup2,
+[SYS_alarm]   sys_alarm,
 };
 
-char *syscall_str[24] = {"NOT USED",
+char *syscall_str[25] = {"NOT USED",
                     "fork",
                     "exit",
                     "wait",
@@ -158,7 +160,8 @@ char *syscall_str[24] = {"NOT USED",
                     "mkdir",
                     "close",
                     "date",
-                    "dup2"
+                    "dup2",
+                    "alarm"
                     };
 
 void

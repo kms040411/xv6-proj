@@ -102,7 +102,6 @@ mythread(void)
   thread_schedule();
 }
 
-
 int 
 main(int argc, char *argv[]) 
 {

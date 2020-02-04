@@ -27,7 +27,22 @@ barrier_init(void)
 static void 
 barrier()
 {
-  bstate.round++;
+  int old_round;
+  
+  pthread_mutex_lock(&bstate.barrier_mutex);
+  bstate.nthread++;
+  old_round = bstate.round;
+
+  if (bstate.nthread % nthread != 0) {
+    while(old_round == bstate.round) {
+      pthread_cond_wait(&bstate.barrier_cond, &bstate.barrier_mutex);
+    }
+  } else {   // Last thread
+    pthread_cond_broadcast(&bstate.barrier_cond);
+    bstate.round++;
+  }
+  pthread_mutex_unlock(&bstate.barrier_mutex);
+  return;
 }
 
 static void *

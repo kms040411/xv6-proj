@@ -6,6 +6,9 @@
 #include "fs.h"
 #include "buf.h"
 
+#include "mmu.h"
+#include "proc.h"
+
 // Simple logging that allows concurrent FS system calls.
 //
 // A log transaction contains the updates of multiple FS system
@@ -72,11 +75,11 @@ install_trans(void)
   int tail;
 
   for (tail = 0; tail < log.lh.n; tail++) {
-    struct buf *lbuf = bread(log.dev, log.start+tail+1); // read log block
+    //struct buf *lbuf = bread(log.dev, log.start+tail+1); // read log block
     struct buf *dbuf = bread(log.dev, log.lh.block[tail]); // read dst
-    memmove(dbuf->data, lbuf->data, BSIZE);  // copy block to dst
+    //memmove(dbuf->data, lbuf->data, BSIZE);  // copy block to dst
     bwrite(dbuf);  // write dst to disk
-    brelse(lbuf);
+    //brelse(lbuf);
     brelse(dbuf);
   }
 }
@@ -120,6 +123,16 @@ recover_from_log(void)
   log.lh.n = 0;
   write_head(); // clear the log
 }
+/*
+static void
+recover_from_log(void)
+{
+  read_head();      
+  cprintf("recovery: n=%d but ignoring\n", log.lh.n);
+  install_trans();
+  log.lh.n = 0;
+  write_head();
+}*/
 
 // called at the start of each FS system call.
 void
@@ -200,6 +213,23 @@ commit()
     write_head();    // Erase the transaction from the log
   }
 }
+/*
+void
+commit(void)
+{
+  int pid = myproc()->pid;
+  if (log.lh.n > 0) {
+    write_log();
+    write_head();
+    if(pid > 1)            // AAA
+      log.lh.block[0] = 0; // BBB
+    install_trans();
+    if(pid > 1)            // AAA
+      panic("commit mimicking crash"); // CCC
+    log.lh.n = 0; 
+    write_head();
+  }
+}*/
 
 // Caller has modified b->data and is done with the buffer.
 // Record the block number and pin in the cache with B_DIRTY.
